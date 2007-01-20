@@ -6,23 +6,25 @@ class StringValidator
   class Error < StandardError
   end
 
-  def initialize(rule)
+  def initialize(rule, raise_flag=true)
     @rule = rule
+    @raise_flag = raise_flag
   end
 
-  def validate(str, raise_flag=true)
+  def validated_rule(str)
     @rule.keys.sort{|a,b|a.to_s<=>b.to_s}.each do |k|
       if self.class.validate(@rule[k], str) then
         return k
       end
     end
-    raise Error, str if raise_flag
     return nil
   end
 
-  def validate_rule(rule, str)
+  def validate(rule, str)
     raise ArgumentError, "No such rule: #{rule}" unless @rule.key? rule
-    self.class.validate(@rule[rule], str)
+    ret = self.class.validate(@rule[rule], str)
+    raise Error, str if @raise_flag and not ret
+    return ret
   end
 
   def self.validate(r, str)
@@ -42,18 +44,15 @@ class StringValidator
       return r.include?(str)
     when Regexp then
       return r =~ str
-    when Array then
-      case r.first
-      when :ANY
-        return r[1..-1].any?{|i| validate(i, str)}
-      when :ALL
-        return r[1..-1].all?{|i| validate(i, str)}
-      else
-        raise ArgumentError, "First argument must be :ALL or :ANY: #{r.inspect}"
-      end
+    when Proc then
+      return r.call(str)
     when Hash then
       r.each do |k,v|
         case k
+        when :any
+          return false if not v.any?{|i|validate(i, str)}
+        when :all
+          return false if not v.all?{|i|validate(i, str)}
         when :rule
           return false if self.class.validate(v, str)
         when :maxlength
@@ -65,8 +64,6 @@ class StringValidator
         end
       end
       return true
-    when Proc then
-      return r.call(str)
     else
       return true if r.to_s == str
     end
