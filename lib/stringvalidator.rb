@@ -50,15 +50,21 @@ class StringValidator
       r.each do |k,v|
         case k
         when :any
-          return false if not v.any?{|i|validate(i, str)}
+          return false unless v.any?{|i|validate(i, str)}
         when :all
-          return false if not v.all?{|i|validate(i, str)}
+          return false unless v.all?{|i|validate(i, str)}
         when :rule
-          return false if self.class.validate(v, str)
+          return false unless self.validate(v, str)
+        when :length
+          if v.is_a? Range then
+            return false unless v.include? str.length
+          else
+            return false unless str.length == v
+          end
         when :maxlength
-          return false if str.length > v
+          return false unless str.length <= v
         when :minlength
-          return false if str.length < v
+          return false unless str.length >= v
         else
           raise ArgumentError, "Invalid key: #{k}"
         end

@@ -70,14 +70,49 @@ class TC_StringValidator < Test::Unit::TestCase
     assert(!StringValidator.validate(all, "abc"))
   end
 
+  def test_validate_rule()
+    hash = {
+      :rule => /abc/,
+    }
+    assert(StringValidator.validate(hash, "012abc345"))
+    assert(!StringValidator.validate(hash, "12345"))
+  end
+
   def test_validate_length()
     hash = {
-      :maxlength => 10,
-      :minlength => 3,
+      :length => 3,
+    }
+    assert(StringValidator.validate(hash, "123"))
+    assert(!StringValidator.validate(hash, "12"))
+    assert(!StringValidator.validate(hash, "1234"))
+  end
+
+  def test_validate_length_range()
+    hash = {
+      :length => 3..10,
     }
     assert(StringValidator.validate(hash, "123"))
     assert(StringValidator.validate(hash, "1234567890"))
+    assert(StringValidator.validate(hash, "12345"))
     assert(!StringValidator.validate(hash, "12"))
+    assert(!StringValidator.validate(hash, "12345678901"))
+  end
+
+  def test_validate_minlength()
+    hash = {
+      :minlength => 3,
+    }
+    assert(StringValidator.validate(hash, "1234"))
+    assert(StringValidator.validate(hash, "123"))
+    assert(!StringValidator.validate(hash, "12"))
+  end
+
+  def test_validate_maxlength()
+    hash = {
+      :maxlength => 10,
+    }
+    assert(StringValidator.validate(hash, "123456789"))
+    assert(StringValidator.validate(hash, "1234567890"))
     assert(!StringValidator.validate(hash, "12345678901"))
   end
 
