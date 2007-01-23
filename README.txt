@@ -31,59 +31,59 @@ $ make test
 
 str が "abc"？
 {{{
-StringValidator.validate("abc", str)
+StringValidator.valid?("abc", str)
 }}}
 
 str が正規表現に一致？
 {{{
-StringValidator.validate(/hoge/, str)
+StringValidator.valid?(/hoge/, str)
 }}}
 
 str が 123 の数値？
 {{{
-StringValidator.validate(123, str)
-}}}
-
-str が 1〜255 の数値？
-{{{
-StringValidator.validate(1..255, str)
+StringValidator.valid?(123, str)
 }}}
 
 str が 1〜255 の整数？
 {{{
-StringValidator.validate({:all=>[Integer, 1..255]}, str)
+StringValidator.valid?(1..255, str)
+}}}
+
+str が 1〜255 の数値？
+{{{
+StringValidator.valid?(1.0..255, str)
 }}}
 
 str が "abc" または "def"？
 {{{
-StringValidator.validate({:any=>["abc", "def"]}, str)
+StringValidator.valid?(["abc", "def"], str)
 }}}
 
 str の長さが 3〜10？
 {{{
-StringValidator.validate({:minlength=>3, :maxlength=>10}, str)
+StringValidator.valid?({:length=>3..10}, str)
 }}}
 
-str の長さが 3〜10 で正規表現に一致？
+str の長さが 10文字以上で正規表現に一致？
 {{{
-StringValidator.validate({:minlength=>3, :maxlength=>10, rule=>/abc/}, str)
+StringValidator.valid?({:minlength=>10, rule=>/abc/}, str)
 }}}
 
 ブロックを呼び出した結果が真？
 {{{
 p = Proc.new{|a| a == "xyz"}
-StringValidator.validate(p, "xyz")
+StringValidator.valid?(p, "xyz")
 }}}
 
 複数のルールを定義して利用
 {{{
 rules = {
   :port => 1..65535,
-  :domain => /\A[a-z0-9]+(\.[a-z0-9]+)+\z/i
+  :domain => /\A[a-z0-9-]+(\.[a-z0-9-]+)+\z/i
 }
 v = StringValidator.new(rules)
-v.validate(:port, "8080")
-v.validate(:domain, "tmtm.org")
+v.valid?(:port, "8080")
+v.valid?(:domain, "tmtm.org")
 }}}
 
 どのルールに適合したか？
@@ -102,38 +102,92 @@ v.validated_rule("xyz")      # => nil
 
 ==== StringValidator.validate(rule, str) ====
 
-str が rule に一致しているかどうかを真偽値で返す。
+str が rule に適合しなければ例外を発生させる。
 
 rule は次のように評価される。
 
  Integer::
-  整数かどうかを判定。
+  整数かどうか。
+
+  例外:
+  * StringValidator::Error::NotInteger
+
+ Float::
+  実数かどうか。
+
+  例外:
+  * StringValidator::Error::NotFloat
 
  Rangeオブジェクト::
-  rule.include?(str) の結果を返す。
-  rule.first が数値であれば rule.include?(str.to_f)。
+  rule.first と rule.last が整数であれば、rule.include?(str.to_i)。
+
+  例外:
+   * StringValidator::Error::OutOfRange (範囲外)
+   * StringValidator::Error::NotInteger (str が整数でない)
+
+  rule.first が実数であれば、rule.include?(str.to_f)。
+
+  例外:
+   * StringValidator::Error::OutOfRange (範囲外)
+   * StringValidator::Error::NotFloat (str が実数でない)
+
+  それ以外の場合、rule.include?(str)。
+
+  例外:
+   * StringValidator::Error::OutOfRange (範囲外)
 
  Regexpオブジェクト::
-  rule =~ str の結果を返す。
+  rule =~ str が真。
+
+  例外:
+   * StringValidator::Error::RegexpMismatch (非適合)
 
  Procオブジェクト::
-  rule.call(str) の結果を返す。
+  rule.call(str) が真
+
+  例外:
+   * StringValidator::Error::InvalidValue (結果が偽)
+
+ Arrayオブジェクト::
+  配列の各要素について valid?() で評価し、ひとつでも真であれば真
+
+  例外:
+   * StringValidator::Error::InvalidValue (結果が偽)
 
  Hashオブジェクト::
-  Hash の各要素について以下を評価し、すべてが真であれば真を返す。
+  Hash の各要素について以下を評価し、すべてが真であれば真
 
   :any => [ ... ]
-    配列の各要素について validate() で評価し、ひとつでも真であれば真。
+    配列の各要素について valid?() で評価し、ひとつでも真であれば真。Array と同じ。
   :all => [ ... ]
     配列の各要素について validate() で評価し、すべてが真であれば真。
   :rule => obj
-    obj を validate() で評価した結果を返す。
+    obj を validate() で評価。
+  :length => obj
+    obj が Range オブジェクトの場合は obj.include? str.length。
+    そうでなければ、obj == str.length。
   :maxlength => n
     str の文字数が n 以下であれば真。
   :minlength => n
     str の文字数が n 以上であれば真。
 
-==== StringValidator.new(rule_list, flag=true) ====
+  例外:
+   * StringValidator::Error::InvalidValue (:ary に非適合)
+   * StringValidator::Error::InvalidLength (:length に非適合)
+   * StringValidator::Error::TooLong (:maxlength に非適合)
+   * StringValidator::Error::TooShort (:minlength に非適合)
+
+ 上記以外::
+  rule.to_s == str を評価。
+
+  例外:
+   * StringValidator::Error::InvalidValue (非適合)
+
+==== StringValidator.valid?(rule, str) ====
+
+validate(rule, str) と同じ評価を行ない、結果を true / false で返す。
+
+==== StringValidator.new(rule_list) ====
 
 rule_list のルール群を持つ StringValidator オブジェクトを生成する。
 
@@ -146,12 +200,14 @@ rule_list は Hash で以下の形式。
 
 rule は StringValidator.validate() の第１引数と同じ形式で規則を指定する。
 
-flag が true の場合は、StringValidator#validate() が条件を満たさない場合に StringValidator::Error 例外が発生する。
-
 ==== StringValidator#validate(rule_name, str) ====
 
 rule_list[rule_name] の規則で str を評価する。
-評価結果が偽の場合は、StringValidator::Error 例外が発生する。
+適合しない場合は StringValidator::Error::* の例外が発生する。
+
+==== StringValidator#valid?(rule_name, str) ====
+
+StringValidator#validator(rule_name, str) と同じだが、結果を true / false で返す。
 
 ==== StringValidator#validated_rule(str) ====
 
