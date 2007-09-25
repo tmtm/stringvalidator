@@ -4,22 +4,40 @@
 
 class StringValidator
   class Error < StandardError
+    def initialize(value, rule=nil)
+      @rule = rule
+      @value = value
+      super self.class.errmsg
+    end
+    attr_reader :rule, :value
+
+    def self.errmsg()
+      @errmsg
+    end
   end
   class Error::NotInteger < Error
+    @errmsg = "not integer"
   end
   class Error::NotFloat < Error
+    @errmsg = "not float"
   end
   class Error::OutOfRange < Error
+    @errmsg = "out of range"
   end
   class Error::InvalidValue < Error
+    @errmsg = "invalid value"
   end
   class Error::RegexpMismatch < Error
+    @errmsg = "regexp mismatch"
   end
   class Error::InvalidLength < Error
+    @errmsg = "invalid length"
   end
   class Error::TooShort < Error
+    @errmsg = "too short"
   end
   class Error::TooLong < Error
+    @errmsg = "too long"
   end
 
   def initialize(rule)
@@ -46,8 +64,7 @@ class StringValidator
 
   def validate(rule, str)
     raise ArgumentError, "No such rule: #{rule}" unless @rule.key? rule
-    ret = self.class.validate(@rule[rule], str)
-    return ret
+    return self.class.validate(@rule[rule], str)
   end
 
   def self.valid?(r, str)
@@ -62,70 +79,88 @@ class StringValidator
   def self.validate(r, str)
     if r == Integer then
       begin
-        Integer(str)
-        return true
+        return Integer(str)
       rescue ArgumentError
-        raise Error::NotInteger, str
+        raise Error::NotInteger.new(str, r)
       end
     end
     if r == Float then
       begin
-        Float(str)
-        return true
+        return Float(str)
       rescue ArgumentError
-        raise Error::NotFloat, str
+        raise Error::NotFloat.new(str, r)
       end
     end
     case r
     when Range then
       if r.first.is_a? Integer and r.last.is_a? Integer then
         validate(Integer, str)
-        raise Error::OutOfRange, str unless r.include?(str.to_i)
-        return true
+        raise Error::OutOfRange.new(str, r) unless r.include?(str.to_i)
+        return str.to_i
       elsif r.first.is_a? Numeric then
         validate(Float, str)
-        raise Error::OutOfRange, str unless r.include?(str.to_f)
-        return true
+        raise Error::OutOfRange.new(str, r) unless r.include?(str.to_f)
+        return str.to_f
       end
-      raise  Error::OutOfRange, str unless r.include?(str)
-      return true
+      raise  Error::OutOfRange.new(str, r) unless r.include?(str)
+      return str
     when Regexp then
-      raise Error::RegexpMismatch, str unless r =~ str
-      return true
+      raise Error::RegexpMismatch.new(str, r) unless r =~ str
+      return str
     when Proc then
-      raise Error::InvalidValue, str unless r.call(str)
-      return true
+      ret = r.call(str)
+      return ret if ret
+      raise Error::InvalidValue.new(str, r)
     when Array then
-      raise Error::InvalidValue, str unless r.any?{|i| self.valid?(i, str)}
-      return true
+      r.each do |i|
+        begin
+          return self.validate(i, str)
+        rescue Error
+          # dunno
+        end
+      end
+      raise Error::InvalidValue.new(str, r)
     when Hash then
       r.each do |k,v|
         case k
         when :any
-          raise Error::InvalidValue, str unless v.any?{|i| self.valid?(i, str)}
+          return self.validate(v, str)
         when :all
-          v.each{|i| self.validate(i, str)}
+          ret = nil
+          v.each do |i|
+            ret = self.validate(i, str)
+          end
+          return ret
         when :rule
-          self.validate(v, str)
+          return self.validate(v, str)
         when :length
-          if v.is_a? Range then
-            raise Error::InvalidLength, str unless v.include? str.length
-          else
-            raise Error::InvalidLength, str unless str.length == v
+          begin
+            self.validate v, str.length.to_s
+            return str
+          rescue Error
+            raise Error::InvalidLength.new(str, r)
           end
         when :maxlength
-          raise Error::TooLong, str unless str.length <= v
+          raise Error::TooLong.new(str, r) unless str.length <= v
+          return str
         when :minlength
-          raise Error::TooShort, str unless str.length >= v
+          raise Error::TooShort.new(str, r) unless str.length >= v
+          return str
+        when :maxcharlength
+          raise Error::TooLong.new(str, r) unless str.split(//).length <= v
+          return str
+        when :mincharlength
+          raise Error::TooShort.new(str, r) unless str.split(//).length >= v
+          return str
         else
           raise ArgumentError, "Invalid key: #{k}"
         end
       end
       return true
     else
-      return true if r.to_s == str
+      return r if r.to_s == str
     end
-    raise Error::InvalidValue, str
+    raise Error::InvalidValue.new(str, r)
   end
 
 end

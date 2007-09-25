@@ -100,56 +100,56 @@ v.validated_rule("xyz")      # => nil
 
 === メソッド ===
 
-==== StringValidator.validate(rule, str) ====
+==== self.validate(rule, str) ====
 
-str が rule に適合しなければ例外を発生させる。
+str が rule で評価し、適合すれば評価結果を返す。適合しなければ例外を発生させる。
 
 rule は次のように評価される。
 
  Integer::
-  整数かどうか。
+  整数かどうか。Integer(str) を返す。
 
   例外:
   * StringValidator::Error::NotInteger
 
  Float::
-  実数かどうか。
+  実数かどうか。Float(str) を返す。
 
   例外:
   * StringValidator::Error::NotFloat
 
  Rangeオブジェクト::
-  rule.first と rule.last が整数であれば、rule.include?(str.to_i)。
+  rule.first と rule.last が整数であれば、rule.include?(str.to_i)。str.to_i を返す。
 
   例外:
    * StringValidator::Error::OutOfRange (範囲外)
    * StringValidator::Error::NotInteger (str が整数でない)
 
-  rule.first が実数であれば、rule.include?(str.to_f)。
+  rule.first が実数であれば、rule.include?(str.to_f)。str.to_f を返す。
 
   例外:
    * StringValidator::Error::OutOfRange (範囲外)
    * StringValidator::Error::NotFloat (str が実数でない)
 
-  それ以外の場合、rule.include?(str)。
+  それ以外の場合、rule.include?(str)。str を返す。
 
   例外:
    * StringValidator::Error::OutOfRange (範囲外)
 
  Regexpオブジェクト::
-  rule =~ str が真。
+  rule =~ str が真。str を返す。
 
   例外:
    * StringValidator::Error::RegexpMismatch (非適合)
 
  Procオブジェクト::
-  rule.call(str) が真
+  rule.call(str) が真。rule.call(str) の戻り値を返す。
 
   例外:
    * StringValidator::Error::InvalidValue (結果が偽)
 
  Arrayオブジェクト::
-  配列の各要素について valid?() で評価し、ひとつでも真であれば真
+  rule の各要素について valid? で評価し、ひとつでも真であれば真。真になった rule の評価結果を返す。
 
   例外:
    * StringValidator::Error::InvalidValue (結果が偽)
@@ -158,36 +158,45 @@ rule は次のように評価される。
   Hash の各要素について以下を評価し、すべてが真であれば真
 
   :any => [ ... ]
-    配列の各要素について valid?() で評価し、ひとつでも真であれば真。Array と同じ。
+    配列の各要素について validate で評価し、ひとつでも真であれば真。Array と同じ。
   :all => [ ... ]
-    配列の各要素について validate() で評価し、すべてが真であれば真。
+    配列の各要素について validate で評価し、すべてが真であれば真。最後の評価結果を返す。
   :rule => obj
-    obj を validate() で評価。
+    obj を validate で評価。評価結果を返す。
   :length => obj
-    obj が Range オブジェクトの場合は obj.include? str.length。
-    そうでなければ、obj == str.length。
+    str.length について obj で評価。str を返す。
   :maxlength => n
-    str の文字数が n 以下であれば真。
+    str のバイト数が n 以下であれば真。str を返す。
   :minlength => n
-    str の文字数が n 以上であれば真。
+    str のバイト数が n 以上であれば真。str を返す。
+  :maxcharlength => n
+    str の文字数が n 以下であれば真。str を返す。文字の扱いは $KCODE に依存する。
+  :mincharlength => n
+    str の文字数が n 以上であれば真。str を返す。文字の扱いは $KCODE に依存する。
 
   例外:
    * StringValidator::Error::InvalidValue (:ary に非適合)
    * StringValidator::Error::InvalidLength (:length に非適合)
-   * StringValidator::Error::TooLong (:maxlength に非適合)
-   * StringValidator::Error::TooShort (:minlength に非適合)
+   * StringValidator::Error::TooLong (:maxlength, :maxcharlength に非適合)
+   * StringValidator::Error::TooShort (:minlength, :mincharlength に非適合)
 
- 上記以外::
-  rule.to_s == str を評価。
+ その他クラス::
+  rule.new(str) が成功すれば真。rule.new(str) の結果を返す。
 
   例外:
    * StringValidator::Error::InvalidValue (非適合)
 
-==== StringValidator.valid?(rule, str) ====
+ 上記以外::
+  rule.to_s == str を評価。rule を返す。
 
-validate(rule, str) と同じ評価を行ない、結果を true / false で返す。
+  例外:
+   * StringValidator::Error::InvalidValue (非適合)
 
-==== StringValidator.new(rule_list) ====
+==== self.valid?(rule, str) ====
+
+self.validate(rule, str) と同じ評価を行ない、結果を true / false で返す。
+
+==== self.new(rule_list) ====
 
 rule_list のルール群を持つ StringValidator オブジェクトを生成する。
 
@@ -198,18 +207,18 @@ rule_list は Hash で以下の形式。
   }
 }}}
 
-rule は StringValidator.validate() の第１引数と同じ形式で規則を指定する。
+rule は self.validate() の第１引数と同じ形式で規則を指定する。
 
-==== StringValidator#validate(rule_name, str) ====
+==== validate(rule_name, str) ====
 
-rule_list[rule_name] の規則で str を評価する。
+rule_list[rule_name] の規則で str を評価し、評価結果を返す。
 適合しない場合は StringValidator::Error::* の例外が発生する。
 
-==== StringValidator#valid?(rule_name, str) ====
+==== valid?(rule_name, str) ====
 
 StringValidator#validator(rule_name, str) と同じだが、結果を true / false で返す。
 
-==== StringValidator#validated_rule(str) ====
+==== validated_rule(str) ====
 
 rule_list の各規則で str を評価し、一致した結果の name を返す。
 どの規則にも一致しない場合は nil を返す。

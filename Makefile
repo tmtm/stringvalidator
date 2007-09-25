@@ -10,4 +10,4 @@ clean:
 
 test: test_
 test_:
-	ruby ./setup.rb test
+	ruby -w -I ./lib test/test_stringvalidator.rb
