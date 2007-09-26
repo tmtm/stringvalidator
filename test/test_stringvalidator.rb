@@ -224,6 +224,15 @@ class TC_StringValidator < Test::Unit::TestCase
     assert_raises(StringValidator::Error::InvalidValue){StringValidator.validate(p, "abc")}
   end
 
+  require "pathname"
+  def test_valid_class()
+    r = Pathname
+    assert_equal true, StringValidator.valid?(r, "abcdefg")
+    assert_equal false, StringValidator.valid?(r, "abcd\0efg")
+    assert_kind_of Pathname, StringValidator.validate(r, "abcdefg")
+    assert_raises(StringValidator::Error::InvalidValue){StringValidator.validate(r, "abcd\0efg")}
+  end
+
   def test_validate_rules()
     rule = {
       :hoge => Integer,

@@ -157,6 +157,12 @@ class StringValidator
         end
       end
       return true
+    when Class then
+      begin
+        return r.new(str)
+      rescue
+        raise Error::InvalidValue.new(str, r)
+      end
     else
       return r if r.to_s == str
     end
