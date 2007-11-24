@@ -188,18 +188,57 @@ class TC_StringValidator < Test::Unit::TestCase
     assert_raises(StringValidator::Error::TooLong){StringValidator.validate(hash, "12345678901")}
   end
 
+  def test_valid_charlength()
+    kcode = $KCODE
+    $KCODE = "U"
+    hash = {
+      :charlength => 3,
+    }
+    begin
+      assert_equal true, StringValidator.valid?(hash, "１２３")
+      assert_equal false, StringValidator.valid?(hash, "１２")
+      assert_equal false, StringValidator.valid?(hash, "１２３４")
+      assert_equal "１２３", StringValidator.validate(hash, "１２３")
+      assert_raises(StringValidator::Error::InvalidLength){StringValidator.validate(hash, "１２３４")}
+    ensure
+      $KCODE = kcode
+    end
+  end
+
+  def test_valid_charlength_range()
+    kcode = $KCODE
+    $KCODE = "U"
+    hash = {
+      :charlength => 3..10,
+    }
+    begin
+      assert_equal true, StringValidator.valid?(hash, "１２３")
+      assert_equal true, StringValidator.valid?(hash, "１２３４５６７８９０")
+      assert_equal true, StringValidator.valid?(hash, "１２３４５")
+      assert_equal false, StringValidator.valid?(hash, "１２")
+      assert_equal false, StringValidator.valid?(hash, "１２３４５６７８９０１")
+      assert_equal "１２３", StringValidator.validate(hash, "１２３")
+      assert_raises(StringValidator::Error::InvalidLength){StringValidator.validate(hash, "１２３４５６７８９０１")}
+    ensure
+      $KCODE = kcode
+    end
+  end
+
   def test_valid_mincharlength()
     kcode = $KCODE
     $KCODE = "U"
     hash = {
       :mincharlength => 3,
     }
-    assert_equal true, StringValidator.valid?(hash, "１２３４")
-    assert_equal true, StringValidator.valid?(hash, "１２３")
-    assert_equal false, StringValidator.valid?(hash, "１２")
-    assert_equal "１２３", StringValidator.validate(hash, "１２３")
-    assert_raises(StringValidator::Error::TooShort){StringValidator.validate(hash, "１２")}
-    $KCODE = kcode
+    begin
+      assert_equal true, StringValidator.valid?(hash, "１２３４")
+      assert_equal true, StringValidator.valid?(hash, "１２３")
+      assert_equal false, StringValidator.valid?(hash, "１２")
+      assert_equal "１２３", StringValidator.validate(hash, "１２３")
+      assert_raises(StringValidator::Error::TooShort){StringValidator.validate(hash, "１２")}
+    ensure
+      $KCODE = kcode
+    end
   end
 
   def test_valid_maxcharlength()
@@ -208,12 +247,24 @@ class TC_StringValidator < Test::Unit::TestCase
     hash = {
       :maxcharlength => 10,
     }
-    assert_equal true, StringValidator.valid?(hash, "１２３４５６７８９")
-    assert_equal true, StringValidator.valid?(hash, "１２３４５６７８９０")
-    assert_equal false, StringValidator.valid?(hash, "１２３４５６７８９０１")
-    assert_equal "１２３４５６７８９", StringValidator.validate(hash, "１２３４５６７８９")
-    assert_raises(StringValidator::Error::TooLong){StringValidator.validate(hash, "１２３４５６７８９０１")}
-    $KCODE = kcode
+    begin
+      assert_equal true, StringValidator.valid?(hash, "１２３４５６７８９")
+      assert_equal true, StringValidator.valid?(hash, "１２３４５６７８９０")
+      assert_equal false, StringValidator.valid?(hash, "１２３４５６７８９０１")
+      assert_equal "１２３４５６７８９", StringValidator.validate(hash, "１２３４５６７８９")
+      assert_raises(StringValidator::Error::TooLong){StringValidator.validate(hash, "１２３４５６７８９０１")}
+    ensure
+      $KCODE = kcode
+    end
+  end
+
+  def test_valid_invalid_hash
+    hash = {
+      :hoge => nil,
+    }
+    begin
+      assert_raises(ArgumentError){StringValidator.validate(hash, "hoge")}
+    end
   end
 
   def test_valid_proc()
