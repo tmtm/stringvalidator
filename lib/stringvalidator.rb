@@ -29,9 +29,9 @@
 #  StringValidator.validate 1.0..255, "10.9"          # => 10.9
 #  str = "abc"
 #  StringValidator.validate ["abc", "def"], str       # => str
-#  StringValidator.validate({:length=>3..10}, str)    # => str
-#  StringValidator.validate({:minlength=>3, :rule=>/abc/}, str)      # =>str
-#  StringValidator.validate(Proc.new{|a| a == "abc" && 999}, str)    # =>999
+#  StringValidator.validate({:length=>3..10}, str)    # => {:length=>str}
+#  StringValidator.validate({:minlength=>3, :rule=>/abc/}, str)      # =>{:minlength=>str, :rule=>str}
+#  StringValidator.validate Proc.new{|a| a == "abc" && 999}, str     # =>999
 #  StringValidator.validate Proc.new{|s| Date.parse s}, "2007-10-02" # => Date object
 #
 # StringValidator.valid?(_rule_, _str_) は _str_ が _rule_ に適合していれば true、そうでなければ false を返す。
@@ -135,6 +135,8 @@ class StringValidator
   # _rule_ の要素をルールとして評価し、正当な要素が一つでもあれば正当とみなす。
   # 最初に正当になったルールの結果を返す。
   # ==== Hash オブジェクト
+  # 複数のルールが指定された場合は、すべてのルールを満たせば正当とみなす。
+  # 結果は、{各ルールのキー => 各ルールの評価結果} の Hash。
   # [<tt>:any => _array_</tt>]
   #  Array と同じ。
   # [<tt>:all => _array_</tt>]
@@ -144,22 +146,22 @@ class StringValidator
   #  _obj_ をルールとして評価する。
   # [<tt>:length => _integer_ or _range_</tt>]
   #  _str_ の長さ(バイト数)が _integer_ に一致する場合、または _range_ 内であれば正当とみなす。
-  #  _str_ を返す。
+  #  評価結果は _str_。
   # [<tt>:maxlength => _integer_</tt>]
   #  _str_ の長さ(バイト数)が _integer_ 以下であれば正当とみなす。
-  #  _str_ を返す。
+  #  評価結果は _str_。
   # [<tt>:minlength => _integer_</tt>]
   #  _str_ の長さ(バイト数)が _integer_ 以上であれば正当とみなす。
-  #  _str_ を返す。
+  #  評価結果は _str_。
   # [<tt>:charlength => _integer_ or _range_</tt>]
   #  _str_ の長さ(文字数)が _integer_ に一致する場合、または _range_ 内であれば正当とみなす。文字数は $KCODE に依存する。
-  #  _str_ を返す。
+  #  評価結果は _str_。
   # [<tt>:maxcharlength => _integer_</tt>]
   #  _str_ の長さ(文字数)が _integer_ 以下であれば正当とみなす。文字数は $KCODE に依存する。
-  #  _str_ を返す。
+  #  評価結果は _str_。
   # [<tt>:mincharlength => _integer_</tt>]
   #  _str_ の長さ(文字数)が _integer_ 以上であれば正当とみなす。文字数は $KCODE に依存する。
-  #  _str_ を返す。
+  #  評価結果は _str_。
   # ==== Class オブジェクト
   # _rule_.new(_str_) が成功すれば正当とみなす。
   # _rule_.new(_str_) を返す。
@@ -212,49 +214,48 @@ class StringValidator
       end
       raise Error::InvalidValue.new(str, rule)
     when Hash then
+      ret = {}
       rule.each do |k,v|
         case k
         when :any
-          return self.validate(v, str)
+          ret[k] = self.validate(v, str)
         when :all
-          ret = nil
           v.each do |i|
-            ret = self.validate(i, str)
+            ret[k] = self.validate(i, str)
           end
-          return ret
         when :rule
-          return self.validate(v, str)
+          ret[k] = self.validate(v, str)
         when :length
           begin
             self.validate v, str.length.to_s
-            return str
+            ret[k] = str
           rescue Error
             raise Error::InvalidLength.new(str, rule)
           end
         when :maxlength
           raise Error::TooLong.new(str, rule) unless str.length <= v
-          return str
+          ret[k] = str
         when :minlength
           raise Error::TooShort.new(str, rule) unless str.length >= v
-          return str
+          ret[k] = str
         when :charlength
           begin
             self.validate v, str.split(//).length.to_s
-            return str
+            ret[k] = str
           rescue Error
             raise Error::InvalidLength.new(str, rule)
           end
         when :maxcharlength
           raise Error::TooLong.new(str, rule) unless str.split(//).length <= v
-          return str
+          ret[k] = str
         when :mincharlength
           raise Error::TooShort.new(str, rule) unless str.split(//).length >= v
-          return str
+          ret[k] = str
         else
           raise ArgumentError, "Invalid key: #{k}"
         end
       end
-      return false
+      return ret
     when Class then
       begin
         return rule.new(str)
