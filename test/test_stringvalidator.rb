@@ -101,9 +101,9 @@ class TC_StringValidator < Test::Unit::TestCase
 
   def test_validate_all()
     all = {:all => [Integer, 5..10]}
-    assert_equal 5, StringValidator.validate(all, "5")[:all]
-    assert_equal 7, StringValidator.validate(all, "7")[:all]
-    assert_equal 10, StringValidator.validate(all, "10")[:all]
+    assert_equal [5, 5], StringValidator.validate(all, "5")[:all]
+    assert_equal [7, 7], StringValidator.validate(all, "7")[:all]
+    assert_equal [10, 10], StringValidator.validate(all, "10")[:all]
     assert_raises(StringValidator::Error::NotInteger){StringValidator.validate(all, "8.5")}
     assert_raises(StringValidator::Error::NotInteger){StringValidator.validate(all, "abc")}
   end

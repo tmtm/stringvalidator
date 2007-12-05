@@ -141,7 +141,7 @@ class StringValidator
   #  Array と同じ。
   # [<tt>:all => _array_</tt>]
   #  _rule_ の要素をルールとして評価し、すべての要素が正当であれば正当とみなす。
-  #  最後に評価したルールの結果を返す。
+  #  評価結果は、各ルールの評価結果の配列。
   # [<tt>:rule => _obj_</tt>]
   #  _obj_ をルールとして評価する。
   # [<tt>:length => _integer_ or _range_</tt>]
@@ -220,8 +220,8 @@ class StringValidator
         when :any
           ret[k] = self.validate(v, str)
         when :all
-          v.each do |i|
-            ret[k] = self.validate(i, str)
+          ret[k] = v.map do |i|
+            self.validate(i, str)
           end
         when :rule
           ret[k] = self.validate(v, str)
