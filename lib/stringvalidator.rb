@@ -209,7 +209,7 @@ class StringValidator
         begin
           return self.validate(i, str)
         rescue Error
-          # dunno
+          nil
         end
       end
       raise Error::InvalidValue.new(str, rule)
