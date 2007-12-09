@@ -63,7 +63,7 @@ class StringValidator
   class Error < StandardError
     # _value_:: 対象文字列
     # _rule_:: ルールオブジェクト
-    def initialize(value, rule=nil)
+    def initialize(value=nil, rule=nil)
       @rule = rule
       @value = value
       super self.class.errmsg
