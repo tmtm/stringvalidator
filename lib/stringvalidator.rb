@@ -141,28 +141,22 @@ class StringValidator
   # [<tt>:any => _array_</tt>]
   #  Array と同じ。
   # [<tt>:all => _array_</tt>]
-  #  _rule_ の要素をルールとして評価し、すべての要素が正当であれば正当とみなす。
-  #  評価結果は、各ルールの評価結果の配列。
+  #  _array_ の要素をルールとして評価し、すべての要素が正当であれば正当とみなす。
+  #  評価結果は、最初の要素のルールの評価結果。
   # [<tt>:rule => _obj_</tt>]
   #  _obj_ をルールとして評価する。
   # [<tt>:length => _integer_ or _range_</tt>]
   #  _str_ の長さ(バイト数)が _integer_ に一致する場合、または _range_ 内であれば正当とみなす。
-  #  評価結果は _str_。
   # [<tt>:maxlength => _integer_</tt>]
   #  _str_ の長さ(バイト数)が _integer_ 以下であれば正当とみなす。
-  #  評価結果は _str_。
   # [<tt>:minlength => _integer_</tt>]
   #  _str_ の長さ(バイト数)が _integer_ 以上であれば正当とみなす。
-  #  評価結果は _str_。
   # [<tt>:charlength => _integer_ or _range_</tt>]
   #  _str_ の長さ(文字数)が _integer_ に一致する場合、または _range_ 内であれば正当とみなす。文字数は $KCODE に依存する。
-  #  評価結果は _str_。
   # [<tt>:maxcharlength => _integer_</tt>]
   #  _str_ の長さ(文字数)が _integer_ 以下であれば正当とみなす。文字数は $KCODE に依存する。
-  #  評価結果は _str_。
   # [<tt>:mincharlength => _integer_</tt>]
   #  _str_ の長さ(文字数)が _integer_ 以上であれば正当とみなす。文字数は $KCODE に依存する。
-  #  評価結果は _str_。
   # ==== Class オブジェクト
   # _rule_.new(_str_) が成功すれば正当とみなす。
   # _rule_.new(_str_) を返す。
