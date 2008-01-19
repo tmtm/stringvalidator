@@ -10,4 +10,9 @@ clean:
 
 test: test_
 test_:
-	ruby -w -I ./lib test/test_stringvalidator.rb
+	ruby -w test/test_stringvalidator.rb
+
+doc: doc/index.html
+
+doc/index.html: lib/stringvalidator.rb
+	rdoc -c utf-8 lib

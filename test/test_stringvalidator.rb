@@ -3,7 +3,7 @@
 # mailto:tommy@tmtm.org
 
 require "test/unit"
-require "stringvalidator"
+require "#{File.dirname __FILE__}/../lib/stringvalidator"
 
 class TC_StringValidator < Test::Unit::TestCase
   def setup()
@@ -91,19 +91,19 @@ class TC_StringValidator < Test::Unit::TestCase
 
   def test_validate_any()
     any = {:any => [1, 2, 4, 8]}
-    assert_equal 1, StringValidator.validate(any, "1")[:any]
-    assert_equal 2, StringValidator.validate(any, "2")[:any]
-    assert_equal 4, StringValidator.validate(any, "4")[:any]
-    assert_equal 8, StringValidator.validate(any, "8")[:any]
+    assert_equal 1, StringValidator.validate(any, "1")
+    assert_equal 2, StringValidator.validate(any, "2")
+    assert_equal 4, StringValidator.validate(any, "4")
+    assert_equal 8, StringValidator.validate(any, "8")
     assert_raises(StringValidator::Error::InvalidValue){StringValidator.validate(any, "5")}
     assert_raises(StringValidator::Error::InvalidValue){StringValidator.validate(any, "0")}
   end
 
   def test_validate_all()
     all = {:all => [Integer, 5..10]}
-    assert_equal [5, 5], StringValidator.validate(all, "5")[:all]
-    assert_equal [7, 7], StringValidator.validate(all, "7")[:all]
-    assert_equal [10, 10], StringValidator.validate(all, "10")[:all]
+    assert_equal 5, StringValidator.validate(all, "5")
+    assert_equal 7, StringValidator.validate(all, "7")
+    assert_equal 10, StringValidator.validate(all, "10")
     assert_raises(StringValidator::Error::NotInteger){StringValidator.validate(all, "8.5")}
     assert_raises(StringValidator::Error::NotInteger){StringValidator.validate(all, "abc")}
   end
@@ -112,7 +112,7 @@ class TC_StringValidator < Test::Unit::TestCase
     hash = {
       :rule => /abc/,
     }
-    assert_equal "012abc345", StringValidator.validate(hash, "012abc345")[:rule]
+    assert_equal "012abc345", StringValidator.validate(hash, "012abc345")
     assert_raises(StringValidator::Error::RegexpMismatch){StringValidator.validate(hash, "12345")}
   end
 
@@ -120,7 +120,7 @@ class TC_StringValidator < Test::Unit::TestCase
     hash = {
       :length => 3,
     }
-    assert_equal "123", StringValidator.validate(hash, "123")[:length]
+    assert_equal "123", StringValidator.validate(hash, "123")
     assert_raises(StringValidator::Error::InvalidLength){StringValidator.validate(hash, "1234")}
   end
 
@@ -128,9 +128,9 @@ class TC_StringValidator < Test::Unit::TestCase
     hash = {
       :length => 3..10,
     }
-    assert_equal "123", StringValidator.validate(hash, "123")[:length]
-    assert_equal "1234567890", StringValidator.validate(hash, "1234567890")[:length]
-    assert_equal "12345", StringValidator.validate(hash, "12345")[:length]
+    assert_equal "123", StringValidator.validate(hash, "123")
+    assert_equal "1234567890", StringValidator.validate(hash, "1234567890")
+    assert_equal "12345", StringValidator.validate(hash, "12345")
     assert_raises(StringValidator::Error::InvalidLength){StringValidator.validate(hash, "12")}
     assert_raises(StringValidator::Error::InvalidLength){StringValidator.validate(hash, "12345678901")}
   end
@@ -139,8 +139,8 @@ class TC_StringValidator < Test::Unit::TestCase
     hash = {
       :minlength => 3,
     }
-    assert_equal "1234", StringValidator.validate(hash, "1234")[:minlength]
-    assert_equal "123", StringValidator.validate(hash, "123")[:minlength]
+    assert_equal "1234", StringValidator.validate(hash, "1234")
+    assert_equal "123", StringValidator.validate(hash, "123")
     assert_raises(StringValidator::Error::TooShort){StringValidator.validate(hash, "12")}
   end
 
@@ -148,8 +148,8 @@ class TC_StringValidator < Test::Unit::TestCase
     hash = {
       :maxlength => 10,
     }
-    assert_equal "123456789", StringValidator.validate(hash, "123456789")[:maxlength]
-    assert_equal "1234567890", StringValidator.validate(hash, "1234567890")[:maxlength]
+    assert_equal "123456789", StringValidator.validate(hash, "123456789")
+    assert_equal "1234567890", StringValidator.validate(hash, "1234567890")
     assert_raises(StringValidator::Error::TooLong){StringValidator.validate(hash, "12345678901")}
   end
 
@@ -160,7 +160,7 @@ class TC_StringValidator < Test::Unit::TestCase
       :charlength => 3,
     }
     begin
-      assert_equal "１２３", StringValidator.validate(hash, "１２３")[:charlength]
+      assert_equal "１２３", StringValidator.validate(hash, "１２３")
       assert_raises(StringValidator::Error::InvalidLength){StringValidator.validate(hash, "１２")}
       assert_raises(StringValidator::Error::InvalidLength){StringValidator.validate(hash, "１２３４")}
     ensure
@@ -175,9 +175,9 @@ class TC_StringValidator < Test::Unit::TestCase
       :charlength => 3..10,
     }
     begin
-      assert_equal "１２３", StringValidator.validate(hash, "１２３")[:charlength]
-      assert_equal "１２３４５６７８９０", StringValidator.validate(hash, "１２３４５６７８９０")[:charlength]
-      assert_equal "１２３４５", StringValidator.validate(hash, "１２３４５")[:charlength]
+      assert_equal "１２３", StringValidator.validate(hash, "１２３")
+      assert_equal "１２３４５６７８９０", StringValidator.validate(hash, "１２３４５６７８９０")
+      assert_equal "１２３４５", StringValidator.validate(hash, "１２３４５")
       assert_raises(StringValidator::Error::InvalidLength){StringValidator.validate(hash, "１２")}
       assert_raises(StringValidator::Error::InvalidLength){StringValidator.validate(hash, "１２３４５６７８９０１")}
     ensure
@@ -192,8 +192,8 @@ class TC_StringValidator < Test::Unit::TestCase
       :mincharlength => 3,
     }
     begin
-      assert_equal "１２３４", StringValidator.validate(hash, "１２３４")[:mincharlength]
-      assert_equal "１２３", StringValidator.validate(hash, "１２３")[:mincharlength]
+      assert_equal "１２３４", StringValidator.validate(hash, "１２３４")
+      assert_equal "１２３", StringValidator.validate(hash, "１２３")
       assert_raises(StringValidator::Error::TooShort){StringValidator.validate(hash, "１２")}
     ensure
       $KCODE = kcode
@@ -207,8 +207,8 @@ class TC_StringValidator < Test::Unit::TestCase
       :maxcharlength => 10,
     }
     begin
-      assert_equal "１２３４５６７８９", StringValidator.validate(hash, "１２３４５６７８９")[:maxcharlength]
-      assert_equal "１２３４５６７８９０", StringValidator.validate(hash, "１２３４５６７８９０")[:maxcharlength]
+      assert_equal "１２３４５６７８９", StringValidator.validate(hash, "１２３４５６７８９")
+      assert_equal "１２３４５６７８９０", StringValidator.validate(hash, "１２３４５６７８９０")
       assert_raises(StringValidator::Error::TooLong){StringValidator.validate(hash, "１２３４５６７８９０１")}
     ensure
       $KCODE = kcode
@@ -221,7 +221,17 @@ class TC_StringValidator < Test::Unit::TestCase
       :rule => /\A\d+\z/,
     }
     str = "12345"
-    assert_equal({:maxlength=>str, :rule=>str}, StringValidator.validate(hash, str))
+    assert_equal(str, StringValidator.validate(hash, str))
+  end
+
+  def test_validate_hash_rule_any_all
+    hash = {
+      :rule => proc{123},
+      :any => ["12345", "abcde"],
+      :all => [Integer, String],
+    }
+    str = "12345"
+    assert_equal(123, StringValidator.validate(hash, str))
   end
 
   def test_validate_invalid_hash

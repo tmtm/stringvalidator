@@ -10,6 +10,7 @@
 # * 規則は Ruby のリテラルで記述する。
 #
 # == Download
+# * http://rubyforge.org/frs/?group_id=4776
 # * http://tmtm.org/downloads/ruby/stringvalidator/
 #
 # == Install
@@ -29,8 +30,8 @@
 #  StringValidator.validate 1.0..255, "10.9"          # => 10.9
 #  str = "abc"
 #  StringValidator.validate ["abc", "def"], str       # => str
-#  StringValidator.validate({:length=>3..10}, str)    # => {:length=>str}
-#  StringValidator.validate({:minlength=>3, :rule=>/abc/}, str)      # =>{:minlength=>str, :rule=>str}
+#  StringValidator.validate({:length=>3..10}, str)    # => str
+#  StringValidator.validate({:minlength=>3, :rule=>/abc/}, str)      # => str
 #  StringValidator.validate Proc.new{|a| a == "abc" && 999}, str     # =>999
 #  StringValidator.validate Proc.new{|s| Date.parse s}, "2007-10-02" # => Date object
 #
@@ -136,7 +137,7 @@ class StringValidator
   # 最初に正当になったルールの結果を返す。
   # ==== Hash オブジェクト
   # 複数のルールが指定された場合は、すべてのルールを満たせば正当とみなす。
-  # 結果は、{各ルールのキー => 各ルールの評価結果} の Hash。
+  # 結果は、:rule(なければ :any, :all)の評価結果。:rule, :any, :all のいずれもなければ str が評価結果となる。
   # [<tt>:any => _array_</tt>]
   #  Array と同じ。
   # [<tt>:all => _array_</tt>]
@@ -220,42 +221,34 @@ class StringValidator
         when :any
           ret[k] = self.validate(v, str)
         when :all
-          ret[k] = v.map do |i|
-            self.validate(i, str)
-          end
+          ret[k] = v.map{|i| self.validate(i, str)}.first
         when :rule
           ret[k] = self.validate(v, str)
         when :length
           begin
             self.validate v, str.length.to_s
-            ret[k] = str
           rescue Error
             raise Error::InvalidLength.new(str, rule)
           end
         when :maxlength
           raise Error::TooLong.new(str, rule) unless str.length <= v
-          ret[k] = str
         when :minlength
           raise Error::TooShort.new(str, rule) unless str.length >= v
-          ret[k] = str
         when :charlength
           begin
             self.validate v, str.split(//).length.to_s
-            ret[k] = str
           rescue Error
             raise Error::InvalidLength.new(str, rule)
           end
         when :maxcharlength
           raise Error::TooLong.new(str, rule) unless str.split(//).length <= v
-          ret[k] = str
         when :mincharlength
           raise Error::TooShort.new(str, rule) unless str.split(//).length >= v
-          ret[k] = str
         else
           raise ArgumentError, "Invalid key: #{k}"
         end
       end
-      return ret
+      return ret[:rule] || ret[:any] || ret[:all] || str
     when Class then
       begin
         return rule.new(str)
