@@ -1,17 +1,20 @@
+# -*- encoding: utf-8 -*-
 # Copyright (C) 2009 TOMITA Masahiro
 # mailto:tommy@tmtm.org
 
 require "pathname"
-require "#{File.dirname __FILE__}/../lib/stringvalidator"
+require File.expand_path "../lib/stringvalidator", File.dirname(__FILE__)
 
 describe StringValidator do
   before do
-    @kcode = $KCODE
-    $KCODE = "U"
+    unless "".respond_to? :encoding
+      @kcode = $KCODE
+      $KCODE = "U"
+    end
   end
 
   after do
-    $KCODE = @kcode
+    $KCODE = @kcode if @kcode
   end
 
   describe '.validate' do
@@ -62,7 +65,7 @@ describe StringValidator do
     it 'Range of String' do
       r = "abc" .. "xyz"
       StringValidator.validate(r, "abc").should == "abc"
-      StringValidator.validate(r, "tommy").should == "tommy"
+      StringValidator.validate(r, "lmn").should == "lmn"
       StringValidator.validate(r, "xyz").should == "xyz"
       lambda{StringValidator.validate(r, "abb")}.should raise_error StringValidator::Error::OutOfRange, 'out of range'
       lambda{StringValidator.validate(r, "xyzz")}.should raise_error StringValidator::Error::OutOfRange, 'out of range'
