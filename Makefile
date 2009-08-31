@@ -8,9 +8,8 @@ install:
 clean:
 	ruby ./setup.rb clean
 
-test: test_
-test_:
-	ruby -w test/test_stringvalidator.rb
+test:
+	spec -c spec/stringvalidator_spec.rb
 
 doc: doc/index.html
 
