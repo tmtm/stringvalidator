@@ -130,7 +130,7 @@ class StringValidator
   # _str_ が _rule_ に適合すれば _str_ を正当とみなす。
   # _str_ を返す。
   # ==== Proc オブジェクト
-  # _rule_.call(_str_) の結果が真であれば _str_ を正当とみなす。
+  # _rule_.call(_str_) が例外を発生しなければ _str_ を正当とみなす。
   # _rule_.call(_str_) の結果を返す。
   # ==== Array オブジェクト
   # _rule_ の要素をルールとして評価し、正当な要素が一つでもあれば正当とみなす。
@@ -196,9 +196,12 @@ class StringValidator
       raise Error::RegexpMismatch.new(str, rule) unless rule =~ str
       return str
     when Proc then
-      ret = rule.call(str)
+      begin
+        return rule.call(str)
+      rescue
+        raise Error::InvalidValue.new(str, rule)
+      end
       return ret if ret
-      raise Error::InvalidValue.new(str, rule)
     when Array then
       rule.each do |i|
         begin

@@ -209,7 +209,9 @@ describe StringValidator do
     it 'Proc' do
       p = Proc.new{|a| a == "xyz" && 123}
       StringValidator.validate(p, "xyz").should == 123
-      lambda{StringValidator.validate(p, "abc")}.should raise_error StringValidator::Error::InvalidValue, 'invalid value'
+      StringValidator.validate(p, "abc").should == false
+      p2 = Proc.new{raise "hoge"}
+      lambda{StringValidator.validate(p2, "abc")}.should raise_error StringValidator::Error::InvalidValue, 'invalid value'
     end
 
     it 'Pathname' do
