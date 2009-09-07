@@ -1,5 +1,4 @@
-# $Id$
-# Copyright (C) 2007 TOMITA Masahiro
+# Copyright (C) 2007-2009 TOMITA Masahiro
 # mailto:tommy@tmtm.org
 #
 # = StringValidator
@@ -10,6 +9,7 @@
 # * 規則は Ruby のリテラルで記述する。
 #
 # == Download
+# * http://github.com/tmtm/stringvalidator/downloads
 # * http://rubyforge.org/frs/?group_id=4776
 # * http://tmtm.org/downloads/ruby/stringvalidator/
 #
@@ -19,7 +19,7 @@
 #  # make install
 #
 # == Usage
-# StringValidator.validate(_rule_, _str) は _str_ が _rule_ に適合していれば、_rule_ に適したオブジェクトを返す。
+# StringValidator.validate(_rule_, _str_) は _str_ が _rule_ に適合していれば、_rule_ に適したオブジェクトを返す。
 # 適合しなければ StringValidator::Error 例外が発生する。
 #
 #  StringValidator.validate "abc", "abc"              # => "abc"
@@ -115,6 +115,37 @@ class StringValidator
   # _str_ が _rule_ に適合するか検査する。
   # 適合しない場合、StringValidator::Error 例外が発生する。
   #
+  # StringValidator#validate(_rule_, _str_) と同じ。
+  #
+  def self.validate(rule, str)
+    self.new(nil).validate(rule, str)
+  end
+
+  # _rule_:: ルールオブジェクト
+  # _str_:: 対象文字列
+  #
+  # validate(_rule_, _str_) が成功すれば true, そうでなければ false を返す。
+  #
+  def self.valid?(rule, str)
+    begin
+      self.validate(rule, str)
+    rescue Error
+      return false
+    end
+    return true
+  end
+
+  # _rule_:: Hash オブジェクト。{:key => rule_object, ...}
+  def initialize(rule)
+    @rule = rule
+  end
+
+  # _rule_:: ルールキー。initialize に与えた Hash のキー
+  # _str_:: 対象文字列
+  #
+  # _str_ が _rule_ に適合するか検査する。
+  # 適合しない場合、StringValidator::Error 例外が発生する。
+  #
   # === _rule_ の形式
   #
   # ==== Integer (Integer そのもの。Integer オブジェクトではない)
@@ -157,6 +188,8 @@ class StringValidator
   #  _str_ の長さ(文字数)が _integer_ 以下であれば正当とみなす。文字数は $KCODE に依存する。
   # [<tt>:mincharlength => _integer_</tt>]
   #  _str_ の長さ(文字数)が _integer_ 以上であれば正当とみなす。文字数は $KCODE に依存する。
+  # ==== Symbol オブジェクト
+  # new の引数として渡したハッシュの、キー _rule_ に対応する値をルールとして評価する。
   # ==== Class オブジェクト
   # _rule_.new(_str_) が成功すれば正当とみなす。
   # _rule_.new(_str_) を返す。
@@ -164,7 +197,7 @@ class StringValidator
   # _str_ が _rule_.to_s と等しければ正当とみなす。
   # _rule_ を返す。
   #
-  def self.validate(rule, str)
+  def validate(rule, str)
     if rule == Integer then
       begin
         return Integer(str)
@@ -252,39 +285,13 @@ class StringValidator
       rescue
         raise Error::InvalidValue.new(str, rule)
       end
+    when Symbol then
+      raise ArgumentError, "No such rule: #{rule}" unless @rule and @rule.key? rule
+      return self.class.validate(@rule[rule], str)
     else
       return rule if rule.to_s == str
     end
     raise Error::InvalidValue.new(str, rule)
-  end
-
-  # _rule_:: ルールオブジェクト
-  # _str_:: 対象文字列
-  #
-  # validate(_rule_, _str_) が成功すれば true, そうでなければ false を返す。
-  #
-  def self.valid?(rule, str)
-    begin
-      self.validate(rule, str)
-    rescue Error
-      return false
-    end
-    return true
-  end
-
-  # _rule_:: Hash オブジェクト。{:key => rule_object, ...}
-  def initialize(rule)
-    @rule = rule
-  end
-
-  # _rule_:: ルールキー。initialize に与えた Hash のキー
-  # _str_:: 対象文字列
-  #
-  # StringValidator.validate(@rule[_rule_], _str_) と同じ。
-  #
-  def validate(rule, str)
-    raise ArgumentError, "No such rule: #{rule}" unless @rule.key? rule
-    return self.class.validate(@rule[rule], str)
   end
 
   # _rule_:: ルールキー。initialize に与えた Hash のキー
@@ -307,7 +314,7 @@ class StringValidator
   # 適合したルールがない場合は nil を返す。
   def validated_rule(str)
     @rule.keys.sort{|a,b|a.to_s<=>b.to_s}.each do |k|
-      if self.class.valid?(@rule[k], str) then
+      if valid?(@rule[k], str) then
         return k
       end
     end

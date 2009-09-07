@@ -229,6 +229,8 @@ describe StringValidator do
     s = StringValidator.new(rule)
     s.validate(:hoge, "123").should == 123
     s.validate(:fuga, "abc").should == "abc"
+    s.validate(Integer, "123").should == 123
+    s.validate([:hoge, :fuga], "abc").should == "abc"
     lambda{s.validate(:hoge, "abc")}.should raise_error StringValidator::Error::NotInteger, 'not integer'
     lambda{s.validate(:fuga, "123")}.should raise_error StringValidator::Error::InvalidValue, 'invalid value'
     lambda{s.validate(:hage, "123")}.should raise_error ArgumentError, 'No such rule: hage'
