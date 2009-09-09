@@ -10,8 +10,6 @@
 #
 # == Download
 # * http://github.com/tmtm/stringvalidator/downloads
-# * http://rubyforge.org/frs/?group_id=4776
-# * http://tmtm.org/downloads/ruby/stringvalidator/
 #
 # == Install
 #  $ make

@@ -1,0 +1,54 @@
+= StringValidator
+Author:: TOMITA Masahiro <tommy@tmtm.org>
+License:: Ruby's. see http://www.ruby-lang.org/en/LICENSE.txt
+
+* 文字列が規則に従うかどうかを検査する
+* 規則は Ruby のリテラルで記述する。
+
+== Download
+* http://github.com/tmtm/stringvalidator/downloads
+
+== Install
+ $ make
+ $ make test
+ # make install
+
+== Usage
+StringValidator.validate(_rule_, _str_) は _str_ が _rule_ に適合していれば、_rule_ に適したオブジェクトを返す。
+適合しなければ StringValidator::Error 例外が発生する。
+
+ StringValidator.validate "abc", "abc"              # => "abc"
+ StringValidator.validate /hoge/, "ahoge"           # => "ahoge"
+ StringValidator.validate Integer, "123"            # => 123
+ StringValidator.validate 123, "123"                # => 123
+ StringValidator.validate 1..255, "128"             # => 128
+ StringValidator.validate 1.0..255, "10.9"          # => 10.9
+ str = "abc"
+ StringValidator.validate ["abc", "def"], str       # => str
+ StringValidator.validate({:length=>3..10}, str)    # => str
+ StringValidator.validate({:minlength=>3, :rule=>/abc/}, str)      # => str
+ StringValidator.validate Proc.new{|a| a == "abc" && 999}, str     # =>999
+ StringValidator.validate Proc.new{|s| Date.parse s}, "2007-10-02" # => Date object
+
+StringValidator.valid?(_rule_, _str_) は _str_ が _rule_ に適合していれば true、そうでなければ false を返す。
+
+複数ルールの定義
+
+ rules = {
+   :port => 1..65535,
+   :domain => /\A[a-z0-9-]+(\.[a-z0-9-]+)+\z/i,
+ }
+ v = StringValidator.new rules
+ v.valid? :port, "8080"
+ v.valid? :domain, "tmtm.org"
+
+どのルールが適合したか
+
+  rules = {
+    :port => 1..65535,
+    :domain => /\A[a-z0-9]+(\.[a-z0-9]+)+\z/i
+  }
+  v = StringValidator.new rules
+  v.validated_rule "8080"     # => :port
+  v.validated_rule "tmtm.org" # => :domain
+  v.validated_rule "xyz"      # => nil
