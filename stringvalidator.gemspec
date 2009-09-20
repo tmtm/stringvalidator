@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'stringvalidator'
-  s.version = '0.4'
+  s.version = '0.4.0'
   s.summary = 'string validator'
   s.author = 'Tomita Masahiro'
   s.email = 'tommy@tmtm.org'
