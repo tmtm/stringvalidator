@@ -5,6 +5,7 @@ Gem::Specification.new do |s|
   s.author = 'Tomita Masahiro'
   s.email = 'tommy@tmtm.org'
   s.homepage = 'http://github.com/tmtm/stringvalidator'
+  s.rubyforge_project = 'stringvalidator'
   s.files = [
     "lib/stringvalidator.rb",
   ]
